@@ -1,0 +1,12 @@
+# Visual Studio
+.vs/
+bin/
+obj/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Build output
+build/
+out/

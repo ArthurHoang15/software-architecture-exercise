@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:ns0="http://services.bit.ueh.edu.vn/" targetNamespace="http://services.bit.ueh.edu.vn/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:complexType name="add">
+    <xsd:sequence>
+      <xsd:element name="arg0" type="xsd:int" />
+      <xsd:element name="arg1" type="xsd:int" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="addResponse">
+    <xsd:sequence>
+      <xsd:element name="return" type="xsd:int" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="divide">
+    <xsd:sequence>
+      <xsd:element name="arg0" type="xsd:double" />
+      <xsd:element name="arg1" type="xsd:double" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="divideResponse">
+    <xsd:sequence>
+      <xsd:element name="return" type="xsd:double" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="multiply">
+    <xsd:sequence>
+      <xsd:element name="arg0" type="xsd:double" />
+      <xsd:element name="arg1" type="xsd:double" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="multiplyResponse">
+    <xsd:sequence>
+      <xsd:element name="return" type="xsd:double" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="subtract">
+    <xsd:sequence>
+      <xsd:element name="arg0" type="xsd:int" />
+      <xsd:element name="arg1" type="xsd:int" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="subtractResponse">
+    <xsd:sequence>
+      <xsd:element name="return" type="xsd:int" />
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="add" type="ns0:add" />
+  <xsd:element name="addResponse" type="ns0:addResponse" />
+  <xsd:element name="divide" type="ns0:divide" />
+  <xsd:element name="divideResponse" type="ns0:divideResponse" />
+  <xsd:element name="multiply" type="ns0:multiply" />
+  <xsd:element name="multiplyResponse" type="ns0:multiplyResponse" />
+  <xsd:element name="subtract" type="ns0:subtract" />
+  <xsd:element name="subtractResponse" type="ns0:subtractResponse" />
+</xsd:schema>
