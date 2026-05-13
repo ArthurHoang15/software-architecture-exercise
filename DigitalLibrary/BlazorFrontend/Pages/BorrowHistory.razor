@@ -1,0 +1,113 @@
+@* BlazorFrontend/Pages/BorrowHistory.razor *@
+@page "/history"
+@inject HttpClient Http
+
+<PageTitle>Lịch sử Mượn Sách</PageTitle>
+
+<div class="container py-4">
+    <h2 class="mb-4">📋 Lịch sử Mượn Sách</h2>
+
+    @if (records == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    }
+    else if (!records.Any())
+    {
+        <div class="alert alert-info">Chưa có lịch sử mượn sách nào.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>User ID</th>
+                        <th>Book ID</th>
+                        <th>Ngày mượn</th>
+                        <th>Hạn trả</th>
+                        <th>Ngày trả</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in records)
+                    {
+                        bool isOverdue = r.ReturnDate == null && r.DueDate < DateTime.Now;
+                        <tr class="@(isOverdue ? "table-danger" : "")">
+                            <td>@r.Id</td>
+                            <td>@r.UserId</td>
+                            <td>@r.BookId</td>
+                            <td>@r.BorrowDate.ToString("dd/MM/yyyy")</td>
+                            <td>@r.DueDate.ToString("dd/MM/yyyy")</td>
+                            <td>@(r.ReturnDate?.ToString("dd/MM/yyyy") ?? "—")</td>
+                            <td>
+                                @if (r.ReturnDate != null)
+                                {
+                                    <span class="badge bg-secondary">Đã trả</span>
+                                }
+                                else if (isOverdue)
+                                {
+                                    <span class="badge bg-danger">⚠️ Quá hạn</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Đang mượn</span>
+                                }
+                            </td>
+                            <td>
+                                @if (r.ReturnDate == null)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            @onclick="() => ReturnBook(r.Id)">
+                                        Trả sách
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(msg))
+    {
+        <div class="alert @(ok ? "alert-success" : "alert-danger") mt-3">@msg</div>
+    }
+</div>
+
+@code {
+    private List<BorrowRecord>? records;
+    private string msg = string.Empty;
+    private bool   ok  = false;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try { records = await Http.GetFromJsonAsync<List<BorrowRecord>>("https://localhost:5005/api/borrowing"); }
+        catch { records = new(); msg = "Không thể kết nối Borrowing Service."; ok = false; }
+    }
+
+    private async Task ReturnBook(int id)
+    {
+        var res = await Http.PutAsync($"https://localhost:5005/api/borrowing/{id}/return", null);
+        ok  = res.IsSuccessStatusCode;
+        msg = ok ? "✅ Trả sách thành công!" : "❌ Không thể trả sách.";
+        if (ok) await Load();
+    }
+
+    public class BorrowRecord
+    {
+        public int       Id         { get; set; }
+        public int       UserId     { get; set; }
+        public int       BookId     { get; set; }
+        public DateTime  BorrowDate { get; set; }
+        public DateTime  DueDate    { get; set; }
+        public DateTime? ReturnDate { get; set; }
+    }
+}

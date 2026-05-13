@@ -1,0 +1,142 @@
+@* BlazorFrontend/Pages/Books.razor *@
+@page "/books"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Danh sách Sách - Thư viện Số</PageTitle>
+
+<div class="container py-4">
+    <h2 class="mb-4">📚 Danh sách Sách</h2>
+
+    @if (books == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Đang tải danh sách sách...</p>
+        </div>
+    }
+    else if (!books.Any())
+    {
+        <div class="alert alert-info">Hiện không có sách nào trong thư viện.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var book in books)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm @(book.Stock == 0 ? "border-danger" : "")">
+                        <div class="card-body">
+                            <h5 class="card-title">@book.Title</h5>
+                            <p class="card-text text-muted">✍️ @book.Author</p>
+                            <span class="badge @(book.Stock > 0 ? "bg-success" : "bg-danger") mb-3">
+                                📦 Còn: @book.Stock cuốn
+                            </span>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-primary w-100"
+                                    disabled="@(book.Stock == 0 || isBorrowing)"
+                                    @onclick="() => BorrowBook(book.Id, book.Title)">
+                                @if (isBorrowing && borrowingBookId == book.Id)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                    <span>Đang xử lý...</span>
+                                }
+                                else
+                                {
+                                    <span>📖 Mượn sách</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert @(isSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show mt-3">
+            @statusMessage
+            <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+        </div>
+    }
+</div>
+
+@code {
+    private List<BookDto>? books;
+    private int  currentUserId  = 1;  // Giả định user đã đăng nhập
+    private bool isBorrowing    = false;
+    private int  borrowingBookId = 0;
+    private string statusMessage = string.Empty;
+    private bool isSuccess       = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBooks();
+    }
+
+    private async Task LoadBooks()
+    {
+        try
+        {
+            books = await Http.GetFromJsonAsync<List<BookDto>>("https://localhost:5003/api/books");
+        }
+        catch
+        {
+            statusMessage = "Không thể kết nối đến Book Service. Hãy chắc chắn service đang chạy.";
+            isSuccess = false;
+            books = new List<BookDto>();
+        }
+    }
+
+    private async Task BorrowBook(int bookId, string bookTitle)
+    {
+        isBorrowing    = true;
+        borrowingBookId = bookId;
+        statusMessage  = string.Empty;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                "https://localhost:5005/api/borrowing",
+                new { UserId = currentUserId, BookId = bookId });
+
+            if (response.IsSuccessStatusCode)
+            {
+                isSuccess     = true;
+                statusMessage = $"✅ Mượn sách '{bookTitle}' thành công! Hạn trả: 14 ngày.";
+                await LoadBooks(); // Reload để cập nhật Stock
+            }
+            else
+            {
+                var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                isSuccess     = false;
+                statusMessage = $"❌ {error?.Message ?? "Không thể mượn sách."}";
+            }
+        }
+        catch (Exception ex)
+        {
+            isSuccess     = false;
+            statusMessage = $"❌ Lỗi kết nối: {ex.Message}";
+        }
+        finally
+        {
+            isBorrowing    = false;
+            borrowingBookId = 0;
+        }
+    }
+
+    public class BookDto
+    {
+        public int    Id     { get; set; }
+        public string Title  { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
+        public int    Stock  { get; set; }
+    }
+
+    public class ErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+    }
+}
